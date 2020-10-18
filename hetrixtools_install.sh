@@ -136,7 +136,7 @@ echo "... done."
 
 echo "Please create a task in task scheduler with the following settings =>"
 echo "Schedule: every minute"
-echo "Command: bash /root/hetrixtools/hetrixtools_agent.sh >> /etc/hetrixtools/hetrixtools_cron.log 2>&1"
+echo "Command: bash /root/hetrixtools/hetrixtools_agent.sh >> /root/hetrixtools/hetrixtools_cron.log 2>&1"
 echo "... done."
 
 # Cleaning up install file
