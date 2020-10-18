@@ -34,7 +34,7 @@ VERSION="1.5.9"
 
 # SID (Server ID - automatically assigned on installation, do not change this)
 # DO NOT share this ID with anyone
-SID="104b7d1e21003deccc45b6258e62970e"
+SID="SIDPLACEHOLDER"
 
 # How frequently should the data be collected (do not modify this, unless instructed to do so)
 CollectEveryXSeconds=3
