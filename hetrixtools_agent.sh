@@ -57,7 +57,7 @@ CheckServices=""
 # * checks the status/health of any software RAID (mdadm) setup on the server
 # * agent must be run as 'root' or privileged user to fetch the RAID status
 # * 0 - OFF (default) | 1 - ON
-CheckSoftRAID=1
+CheckSoftRAID=0
 
 # Check Drive Health
 # * checks the health of any found drives on the system
@@ -65,7 +65,7 @@ CheckSoftRAID=1
 # * (these do not get installed by our agent, you must install them separately)
 # * agent must be run as 'root' or privileged user to use this function
 # * 0 - OFF (default) | 1 - ON
-CheckDriveHealth=1
+CheckDriveHealth=0
 
 # View Running Processes
 # * whether or not to record the server's running processes and display them in your HetrixTools dashboard
