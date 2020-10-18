@@ -1,5 +1,7 @@
 # HetrixTools Linux Server Monitoring Agent
 
+## Modified to run on Synology DSM
+
 Documentation available here: https://docs.hetrixtools.com/category/server-monitor/
 
 

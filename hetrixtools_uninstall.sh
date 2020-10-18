@@ -35,10 +35,10 @@ SID=$1
 
 # Remove old agent (if exists)
 echo "Checking if hetrixtools agent folder exists..."
-if [ -d /etc/hetrixtools ]
+if [ -d /root/hetrixtools ]
 then
 	echo "Old hetrixtools agent found, deleting it..."
-	rm -rf /etc/hetrixtools
+	rm -rf /root/hetrixtools
 else
 	echo "No old hetrixtools agent folder found..."
 fi
@@ -49,24 +49,6 @@ echo "Killing any hetrixtools agent scripts that may be currently running..."
 ps aux | grep -ie hetrixtools_agent.sh | awk '{print $2}' | xargs kill -9
 echo "... done."
 
-# Checking if hetrixtools user exists
-echo "Checking if hetrixtool user exists..."
-if id -u hetrixtools >/dev/null 2>&1
-then
-	echo "The hetrixtools user exists, killing its processes..."
-	pkill -9 -u `id -u hetrixtools`
-	echo "Deleting hetrixtools user..."
-	userdel hetrixtools
-else
-	echo "The hetrixtools user doesn't exist..."
-fi
-echo "... done."
-
-# Removing cronjob (if exists)
-echo "Removing any hetrixtools cronjob, if exists..."
-crontab -u root -l | grep -v 'hetrixtools_agent.sh'  | crontab -u root - >/dev/null 2>&1
-crontab -u hetrixtools -l | grep -v 'hetrixtools_agent.sh'  | crontab -u hetrixtools - >/dev/null 2>&1
-echo "... done."
 
 # Cleaning up uninstall file
 echo "Cleaning up the installation file..."

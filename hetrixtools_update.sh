@@ -23,7 +23,7 @@
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 # Old Agent Path
-AGENT="/etc/hetrixtools/hetrixtools_agent.sh"
+AGENT="/root/hetrixtools/hetrixtools_agent.sh"
 
 # Check if user specified version to update to
 if [ -z "$1" ]
@@ -42,8 +42,7 @@ fi
 echo "... done."
 
 # Check if system has crontab and wget
-echo "Checking for crontab and wget..."
-command -v crontab >/dev/null 2>&1 || { echo "ERROR: Crontab is required to run this agent." >&2; exit 1; }
+echo "Checking for wget..."
 command -v wget >/dev/null 2>&1 || { echo "ERROR: wget is required to run this agent." >&2; exit 1; }
 echo "... done."
 
@@ -80,7 +79,7 @@ ConnectionPorts=$(grep 'ConnectionPorts="' $AGENT | awk -F'"' '{ print $2 }')
 
 # Fetching new agent
 echo "Fetching the new agent..."
-wget -t 1 -T 30 -qO $AGENT --no-check-certificate https://raw.github.com/hetrixtools/agent/$VERS/hetrixtools_agent.sh
+wget -t 1 -T 30 -qO $AGENT --no-check-certificate https://raw.githubusercontent.com/ThoughtfulDev/agent/master/hetrixtools_agent.sh
 echo "... done."
 
 # Inserting Server ID (SID) into the agent config
@@ -146,13 +145,6 @@ echo "Making sure no hetrixtools agent scripts are currently running..."
 ps aux | grep -ie hetrixtools_agent.sh | awk '{print $2}' | xargs kill -9
 echo "... done."
 
-# Assign permissions
-echo "Assigning permissions for the hetrixtools user..."
-if id -u hetrixtools >/dev/null 2>&1
-then
-	chown -R hetrixtools:hetrixtools /etc/hetrixtools
-	chmod -R 700 /etc/hetrixtools
-fi
 
 # Cleaning up install file
 echo "Cleaning up the update file..."

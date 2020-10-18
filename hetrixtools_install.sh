@@ -48,17 +48,17 @@ if [ -z "$2" ]
 fi
 
 # Check if system has crontab and wget
-echo "Checking for crontab and wget..."
-command -v crontab >/dev/null 2>&1 || { echo "ERROR: Crontab is required to run this agent." >&2; exit 1; }
+echo "Checking for wget..."
+#command -v crontab >/dev/null 2>&1 || { echo "ERROR: Crontab is required to run this agent." >&2; exit 1; }
 command -v wget >/dev/null 2>&1 || { echo "ERROR: wget is required to run this agent." >&2; exit 1; }
 echo "... done."
 
 # Remove old agent (if exists)
 echo "Checking if there's any old hetrixtools agent already installed..."
-if [ -d /etc/hetrixtools ]
+if [ -d /root/hetrixtools ]
 then
 	echo "Old hetrixtools agent found, deleting it..."
-	rm -rf /etc/hetrixtools
+	rm -rf /root/hetrixtools
 else
 	echo "No old hetrixtools agent found..."
 fi
@@ -66,17 +66,17 @@ echo "... done."
 
 # Creating agent folder
 echo "Creating the hetrixtools agent folder..."
-mkdir -p /etc/hetrixtools
+mkdir -p /root/hetrixtools
 echo "... done."
 
 # Fetching new agent
 echo "Fetching the new agent..."
-wget -t 1 -T 30 -qO /etc/hetrixtools/hetrixtools_agent.sh --no-check-certificate https://raw.github.com/hetrixtools/agent/master/hetrixtools_agent.sh
+wget -t 1 -T 30 -qO /root/hetrixtools/hetrixtools_agent.sh --no-check-certificate https://raw.githubusercontent.com/ThoughtfulDev/agent/master/hetrixtools_agent.sh
 echo "... done."
 
 # Inserting Server ID (SID) into the agent config
 echo "Inserting Server ID (SID) into agent config..."
-sed -i "s/SIDPLACEHOLDER/$SID/" /etc/hetrixtools/hetrixtools_agent.sh
+sed -i "s/SIDPLACEHOLDER/$SID/" /root/hetrixtools/hetrixtools_agent.sh
 echo "... done."
 
 # Check if any services are to be monitored
@@ -84,7 +84,7 @@ echo "Checking if any services should be monitored..."
 if [ "$3" != "0" ]
 then
 	echo "Services found, inserting them into the agent config..."
-	sed -i "s/CheckServices=\"\"/CheckServices=\"$3\"/" /etc/hetrixtools/hetrixtools_agent.sh
+	sed -i "s/CheckServices=\"\"/CheckServices=\"$3\"/" /root/hetrixtools/hetrixtools_agent.sh
 fi
 echo "... done."
 
@@ -93,7 +93,7 @@ echo "Checking if software RAID should be monitored..."
 if [ "$4" -eq "1" ]
 then
 	echo "Enabling software RAID monitoring in the agent config..."
-	sed -i "s/CheckSoftRAID=0/CheckSoftRAID=1/" /etc/hetrixtools/hetrixtools_agent.sh
+	sed -i "s/CheckSoftRAID=0/CheckSoftRAID=1/" /root/hetrixtools/hetrixtools_agent.sh
 fi
 echo "... done."
 
@@ -102,7 +102,7 @@ echo "Checking if Drive Health should be monitored..."
 if [ "$5" -eq "1" ]
 then
 	echo "Enabling Drive Health monitoring in the agent config..."
-	sed -i "s/CheckDriveHealth=0/CheckDriveHealth=1/" /etc/hetrixtools/hetrixtools_agent.sh
+	sed -i "s/CheckDriveHealth=0/CheckDriveHealth=1/" /root/hetrixtools/hetrixtools_agent.sh
 fi
 echo "... done."
 
@@ -111,7 +111,7 @@ echo "Checking if 'View running processes' should be enabled..."
 if [ "$6" -eq "1" ]
 then
 	echo "Enabling 'View running processes' in the agent config..."
-	sed -i "s/RunningProcesses=0/RunningProcesses=1/" /etc/hetrixtools/hetrixtools_agent.sh
+	sed -i "s/RunningProcesses=0/RunningProcesses=1/" /root/hetrixtools/hetrixtools_agent.sh
 fi
 echo "... done."
 
@@ -120,7 +120,7 @@ echo "Checking if any ports to monitor number of connections on..."
 if [ "$7" != "0" ]
 then
 	echo "Ports found, inserting them into the agent config..."
-	sed -i "s/ConnectionPorts=\"\"/ConnectionPorts=\"$7\"/" /etc/hetrixtools/hetrixtools_agent.sh
+	sed -i "s/ConnectionPorts=\"\"/ConnectionPorts=\"$7\"/" /root/hetrixtools/hetrixtools_agent.sh
 fi
 echo "... done."
 
@@ -129,44 +129,14 @@ echo "Making sure no hetrixtools agent scripts are currently running..."
 ps aux | grep -ie hetrixtools_agent.sh | awk '{print $2}' | xargs kill -9
 echo "... done."
 
-# Checking if hetrixtools user exists
-echo "Checking if hetrixtools user already exists..."
-if id -u hetrixtools >/dev/null 2>&1
-then
-	echo "The hetrixtools user already exists, killing its processes..."
-	pkill -9 -u `id -u hetrixtools`
-	echo "Deleting hetrixtools user..."
-	userdel hetrixtools
-	echo "Creating the new hetrixtools user..."
-	useradd hetrixtools -r -d /etc/hetrixtools -s /bin/false
-	echo "Assigning permissions for the hetrixtools user..."
-	chown -R hetrixtools:hetrixtools /etc/hetrixtools
-	chmod -R 700 /etc/hetrixtools
-else
-	echo "The hetrixtools user doesn't exist, creating it now..."
-	useradd hetrixtools -r -d /etc/hetrixtools -s /bin/false
-	echo "Assigning permissions for the hetrixtools user..."
-	chown -R hetrixtools:hetrixtools /etc/hetrixtools
-	chmod -R 700 /etc/hetrixtools
-fi
-echo "... done."
 
-# Removing old cronjob (if exists)
-echo "Removing any old hetrixtools cronjob, if exists..."
-crontab -u root -l | grep -v 'hetrixtools_agent.sh'  | crontab -u root - >/dev/null 2>&1
-crontab -u hetrixtools -l | grep -v 'hetrixtools_agent.sh'  | crontab -u hetrixtools - >/dev/null 2>&1
-echo "... done."
 
 # Setup the new cronjob to run the agent either as 'root' or as 'hetrixtools' user, depending on client's installation choice.
 # Default is running the agent as 'hetrixtools' user, unless chosen otherwise by the client when fetching the installation code from the hetrixtools website.
-if [ "$2" -eq "1" ]
-then
-	echo "Setting up the new cronjob as 'root' user..."
-	crontab -u root -l 2>/dev/null | { cat; echo "* * * * * bash /etc/hetrixtools/hetrixtools_agent.sh >> /etc/hetrixtools/hetrixtools_cron.log 2>&1"; } | crontab -u root - >/dev/null 2>&1
-else
-	echo "Setting up the new cronjob as 'hetrixtools' user..."
-	crontab -u hetrixtools -l 2>/dev/null | { cat; echo "* * * * * bash /etc/hetrixtools/hetrixtools_agent.sh >> /etc/hetrixtools/hetrixtools_cron.log 2>&1"; } | crontab -u hetrixtools - >/dev/null 2>&1
-fi
+
+echo "Please create a task in task scheduler with the following settings =>"
+echo "Schedule: every minute"
+echo "Command: bash /root/hetrixtools/hetrixtools_agent.sh >> /etc/hetrixtools/hetrixtools_cron.log 2>&1"
 echo "... done."
 
 # Cleaning up install file
@@ -184,14 +154,8 @@ wget -t 1 -T 30 -qO- --post-data "$POST" --no-check-certificate https://sm.hetri
 echo "... done."
 
 # Start the agent
-if [ "$2" -eq "1" ]
-then
-	echo "Starting the agent under the 'root' user..."
-	bash /etc/hetrixtools/hetrixtools_agent.sh > /dev/null 2>&1 &
-else
-	echo "Starting the agent under the 'hetrixtools' user..."
-	sudo -u hetrixtools bash /etc/hetrixtools/hetrixtools_agent.sh > /dev/null 2>&1 &
-fi
+echo "Starting the agent under the 'root' user..."
+bash /root/hetrixtools/hetrixtools_agent.sh > /dev/null 2>&1 &
 echo "... done."
 
 # All done

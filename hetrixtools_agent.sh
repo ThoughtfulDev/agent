@@ -23,8 +23,10 @@
 ## Settings ##
 ##############
 
+synogear install
+
 # Set PATH
-PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/var/packages/DiagnosisTool/target/tool
 ScriptPath=$(dirname "${BASH_SOURCE[0]}")
 
 # Agent Version (do not change)
@@ -32,7 +34,7 @@ VERSION="1.5.9"
 
 # SID (Server ID - automatically assigned on installation, do not change this)
 # DO NOT share this ID with anyone
-SID="SIDPLACEHOLDER"
+SID="104b7d1e21003deccc45b6258e62970e"
 
 # How frequently should the data be collected (do not modify this, unless instructed to do so)
 CollectEveryXSeconds=3
@@ -55,7 +57,7 @@ CheckServices=""
 # * checks the status/health of any software RAID (mdadm) setup on the server
 # * agent must be run as 'root' or privileged user to fetch the RAID status
 # * 0 - OFF (default) | 1 - ON
-CheckSoftRAID=0
+CheckSoftRAID=1
 
 # Check Drive Health
 # * checks the health of any found drives on the system
@@ -63,7 +65,7 @@ CheckSoftRAID=0
 # * (these do not get installed by our agent, you must install them separately)
 # * agent must be run as 'root' or privileged user to use this function
 # * 0 - OFF (default) | 1 - ON
-CheckDriveHealth=0
+CheckDriveHealth=1
 
 # View Running Processes
 # * whether or not to record the server's running processes and display them in your HetrixTools dashboard
@@ -174,9 +176,9 @@ fi
 
 # Disks IOPS
 declare -A vDISKs
-for i in $(df | awk '$1 ~ /\// {print}' | awk '{ print $(NF) }')
+for i in $(df | awk '$1 ~ /\// {print}' | awk '{ print $(NF) }' | grep 'volume*')
 do
-	vDISKs[$i]=$(lsblk -l | grep -w "$i" | awk '{ print $1 }')
+	vDISKs[$i]=$(mount | grep -w "$i" | awk '{print $1}' | sed -e 's/\/dev\///g')
 done
 declare -A IOPSRead
 declare -A IOPSWrite
@@ -289,7 +291,7 @@ then
 	fi
 # If all else fails, get Kernel name
 else
-	OS="$(uname -s) $(uname -r)"
+	OS="DSM $(cat /etc.defaults/VERSION | sed -n 's/productversion=//p' | grep -oP '"\K[^"\047]+(?=["\047])')"
 fi
 OS=$(echo -ne "$OS|$(uname -r)|$RequiresReboot" | base64)
 # Get the server uptime
@@ -381,7 +383,7 @@ if [ "$CheckDriveHealth" -gt 0 ]
 then
 	if [ -x "$(command -v smartctl)" ] #Using S.M.A.R.T. (for regular HDD/SSD)
 	then
-		for i in $(lsblk -l | grep 'disk' | awk '{ print $1 }')
+		for i in $(tail -n +2 /proc/partitions | grep 'sd*' | awk '{print $4}' | grep '[a-z]$')
 		do
 			DHealth=$(smartctl -A /dev/$i)
 			if grep -q 'Attribute' <<< $DHealth
